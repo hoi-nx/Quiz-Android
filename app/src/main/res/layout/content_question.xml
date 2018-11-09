@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".QuestionActivity"
+    tools:showIn="@layout/app_bar_question">
+    
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:background="@color/colorPrimary">
+
+        <android.support.v7.widget.RecyclerView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/rc_anwser"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp"></android.support.v7.widget.RecyclerView>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0/30"
+            android:layout_centerVertical="true"
+            android:layout_toRightOf="@+id/rc_anwser"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:textSize="24dp"
+            android:visibility="gone"
+            android:id="@+id/tv_question_right"
+            android:layout_marginLeft="8dp"/>
+        <TextView
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:id="@+id/tv_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20:00"
+            android:visibility="gone"
+            android:layout_centerVertical="true"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:textSize="24dp"
+            android:layout_marginRight="8dp"/>
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        <android.support.design.widget.TabLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:tabMode="scrollable"
+            
+            android:id="@+id/tab_answer"></android.support.design.widget.TabLayout>
+        <android.support.v4.view.ViewPager
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/view_pager"
+            android:background="@android:color/white">
+
+        </android.support.v4.view.ViewPager>
+    </LinearLayout>
+
+</LinearLayout>
