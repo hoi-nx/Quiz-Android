@@ -4,7 +4,9 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
@@ -22,6 +24,7 @@ import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
 import com.mteam.multichoicequiz.DBHelper.DBHelper;
 import com.mteam.multichoicequiz.adapter.AnswerSheetAdapter;
+import com.mteam.multichoicequiz.adapter.FragmentAdapter;
 import com.mteam.multichoicequiz.common.Common;
 import com.mteam.multichoicequiz.model.CurrentQuestion;
 
@@ -36,6 +39,9 @@ public class QuestionActivity extends AppCompatActivity
     CountDownTimer countDownTimer;
     private AnswerSheetAdapter answerSheetAdapter;
     private TextView tv_right_answer, tv_timer;
+
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
 
     @Override
     protected void onDestroy() {
@@ -82,6 +88,25 @@ public class QuestionActivity extends AppCompatActivity
             }
             answerSheetAdapter = new AnswerSheetAdapter(Common.listAnswerSheet);
             rc_answer_sheet.setAdapter(answerSheetAdapter);
+        }
+
+
+        viewPager=findViewById(R.id.view_pager);
+        tabLayout=findViewById(R.id.tab_answer);
+        getFragmentList();
+
+        FragmentAdapter fragmentAdapter=new FragmentAdapter(getSupportFragmentManager(),this,Common.listFragment);
+        viewPager.setAdapter(fragmentAdapter);
+        tabLayout.setupWithViewPager(viewPager);
+    }
+
+    private void getFragmentList() {
+        for(int i=0;i<Common.questionList.size();i++){
+            Bundle bundel=new Bundle();
+            bundel.putInt("index",i);
+            QuestionFragment questionFragment=new QuestionFragment();
+            questionFragment.setArguments(bundel);
+            Common.listFragment.add(questionFragment);
         }
     }
 
