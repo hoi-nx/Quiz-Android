@@ -1,8 +1,10 @@
 package com.mteam.multichoicequiz;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.view.GravityCompat;
@@ -22,6 +24,7 @@ import android.widget.TextView;
 import com.afollestad.materialdialogs.DialogAction;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.github.javiersantos.materialstyleddialogs.MaterialStyledDialog;
+import com.google.gson.Gson;
 import com.mteam.multichoicequiz.DBHelper.DBHelper;
 import com.mteam.multichoicequiz.adapter.AnswerSheetAdapter;
 import com.mteam.multichoicequiz.adapter.FragmentAdapter;
@@ -38,7 +41,7 @@ public class QuestionActivity extends AppCompatActivity
     RecyclerView rc_answer_sheet;
     CountDownTimer countDownTimer;
     private AnswerSheetAdapter answerSheetAdapter;
-    private TextView tv_right_answer, tv_timer;
+    private TextView tv_right_answer, tv_timer, tvWrongAnswer;
 
     private ViewPager viewPager;
     private TabLayout tabLayout;
@@ -78,7 +81,7 @@ public class QuestionActivity extends AppCompatActivity
             tv_right_answer = findViewById(R.id.tv_question_right);
             tv_right_answer.setVisibility(View.VISIBLE);
             tv_timer.setVisibility(View.VISIBLE);
-            tv_right_answer.setText(new StringBuilder(String.format("%d/%d",Common.right_answer,Common.questionList.size())));
+            tv_right_answer.setText(new StringBuilder(String.format("%d/%d", Common.right_answer, Common.questionList.size())));
             countTime();
             rc_answer_sheet = findViewById(R.id.rc_anwser);
             rc_answer_sheet.setHasFixedSize(true);
@@ -91,25 +94,112 @@ public class QuestionActivity extends AppCompatActivity
         }
 
 
-        viewPager=findViewById(R.id.view_pager);
-        tabLayout=findViewById(R.id.tab_answer);
+        viewPager = findViewById(R.id.view_pager);
+        tabLayout = findViewById(R.id.tab_answer);
         getFragmentList();
 
-        FragmentAdapter fragmentAdapter=new FragmentAdapter(getSupportFragmentManager(),this,Common.listFragment);
+        FragmentAdapter fragmentAdapter = new FragmentAdapter(getSupportFragmentManager(), this, Common.listFragment);
         viewPager.setAdapter(fragmentAdapter);
         tabLayout.setupWithViewPager(viewPager);
+
+        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            int SCROLLING_RIGHT = 1;
+            int SCROLLING_LEFT = 0;
+            int SCROLLING_UNDETERMINED = 2;
+            int currentScrollDirection = 2;
+
+            private void setScrollingDirection(float positionOffset) {
+                if ((1 - positionOffset) >= 0.5) {
+                    this.currentScrollDirection = SCROLLING_RIGHT;
+                } else if ((1 - positionOffset) <= 0.5) {
+                    this.currentScrollDirection = SCROLLING_LEFT;
+                }
+            }
+
+            private boolean isScrollingUndetermined() {
+                return currentScrollDirection == SCROLLING_UNDETERMINED;
+            }
+
+            private boolean isScrollingRight() {
+                return currentScrollDirection == SCROLLING_RIGHT;
+
+            }
+
+            private boolean isScrollingLeft() {
+                return currentScrollDirection == SCROLLING_LEFT;
+
+            }
+
+            @Override
+            public void onPageScrolled(int i, float v, int i1) {
+                if (isScrollingUndetermined()) {
+                    setScrollingDirection(v);
+                }
+
+            }
+
+            @Override
+            public void onPageSelected(int i) {
+                QuestionFragment questionFragment;
+                int position = 0;
+                if (i > 0) {
+                    if (isScrollingRight()) {
+                        questionFragment = Common.listFragment.get(i - 1);
+                        position = i - 1;
+                    } else if (isScrollingLeft()) {
+                        questionFragment = Common.listFragment.get(i + 1);
+                        position = i + 1;
+                    } else {
+                        questionFragment = Common.listFragment.get(0);
+                        position = 0;
+                    }
+                    CurrentQuestion currentQuestion = questionFragment.getSelectAnswer();
+                    Common.listAnswerSheet.set(position, currentQuestion);
+                    answerSheetAdapter.notifyDataSetChanged();
+                    countCorectAnswer();
+
+                    tv_right_answer.setText(new StringBuilder(String.format("%d", Common.right_answer)).append("/").append(String.format("%d", Common.questionList.size())));
+                    tvWrongAnswer.setText(String.valueOf(Common.wrong_count_answer));
+                    if (currentQuestion.getType() == Common.ANSWER_TYPE.NO_ANSWER) {
+                        questionFragment.showCorrectAnswer();
+                        questionFragment.disableAnswer();
+                    }
+
+                }
+
+            }
+
+
+            @Override
+            public void onPageScrollStateChanged(int i) {
+                if (i == ViewPager.SCROLL_STATE_IDLE) {
+                    this.currentScrollDirection = SCROLLING_UNDETERMINED;
+                }
+
+            }
+        });
     }
 
     private void getFragmentList() {
-        for(int i=0;i<Common.questionList.size();i++){
-            Bundle bundel=new Bundle();
-            bundel.putInt("index",i);
-            QuestionFragment questionFragment=new QuestionFragment();
+        for (int i = 0; i < Common.questionList.size(); i++) {
+            Bundle bundel = new Bundle();
+            bundel.putInt("index", i);
+            QuestionFragment questionFragment = new QuestionFragment();
             questionFragment.setArguments(bundel);
             Common.listFragment.add(questionFragment);
         }
     }
 
+    private void countCorectAnswer() {
+        Common.right_answer = Common.wrong_count_answer = 0;
+        for (CurrentQuestion currentQuestion : Common.listAnswerSheet) {
+            if (currentQuestion.getType() == Common.ANSWER_TYPE.CORRECT_ANSWER) {
+                Common.right_answer++;
+            } else if (currentQuestion.getType() == Common.ANSWER_TYPE.WRONG_ANSWER) {
+                Common.wrong_count_answer++;
+            }
+        }
+    }
 
     private void countTime() {
         if (countDownTimer == null) {
@@ -126,6 +216,7 @@ public class QuestionActivity extends AppCompatActivity
 
                 @Override
                 public void onFinish() {
+                    finishGame();
 
                 }
             }.start();
@@ -144,7 +235,7 @@ public class QuestionActivity extends AppCompatActivity
 
                 @Override
                 public void onFinish() {
-
+                    finishGame();
                 }
             }.start();
         }
@@ -153,7 +244,7 @@ public class QuestionActivity extends AppCompatActivity
 
     private void takeQuestion() {
         Common.questionList = DBHelper.getInstance(this).getListQuestionByCategory(Common.categorySelected.getId());
-        Log.d("", "takeQuestion: "+Common.questionList.size());
+        Log.d("", "takeQuestion: " + Common.questionList.size());
         if (Common.questionList.size() == 0) {
             new MaterialStyledDialog.Builder(this).setTitle("Oppa").setIcon(R.drawable.ic_menu_send)
                     .setDescription("We dont have any question in this" + Common.categorySelected.getName() + " category")
@@ -166,12 +257,12 @@ public class QuestionActivity extends AppCompatActivity
                         }
                     }).show();
 
-        }else {
-            if(Common.listAnswerSheet.size()>0){
+        } else {
+            if (Common.listAnswerSheet.size() > 0) {
                 Common.listAnswerSheet.clear();
             }
-            for(int i=0;i<Common.questionList.size();i++){
-                Common.listAnswerSheet.add(new CurrentQuestion(i,Common.ANSWER_TYPE.NO_ANSWER));
+            for (int i = 0; i < Common.questionList.size(); i++) {
+                Common.listAnswerSheet.add(new CurrentQuestion(i, Common.ANSWER_TYPE.NO_ANSWER));
             }
         }
     }
@@ -201,11 +292,46 @@ public class QuestionActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.menu_finish) {
+            if (!isAnswerModeview) {
+                new MaterialStyledDialog.Builder(this).setTitle("Oppa").setIcon(R.drawable.ic_menu_send)
+                        .setDescription("We dont have any question in this" + Common.categorySelected.getName() + " category")
+                        .setPositiveText("OK")
+                        .onPositive(new MaterialDialog.SingleButtonCallback() {
+                            @Override
+                            public void onClick(@NonNull MaterialDialog dialog, @NonNull DialogAction which) {
+                                dialog.dismiss();
+                                finishGame();
+                            }
+                        }).show();
+            }
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void finishGame() {
+        int postion = viewPager.getCurrentItem();
+        QuestionFragment questionFragment = Common.listFragment.get(postion);
+        CurrentQuestion currentQuestion = questionFragment.getSelectAnswer();
+        Common.listAnswerSheet.set(postion, currentQuestion);
+        answerSheetAdapter.notifyDataSetChanged();
+        countCorectAnswer();
+
+        tv_right_answer.setText(new StringBuilder(String.format("%d", Common.right_answer)).append("/").append(String.format("%d", Common.questionList.size())));
+        tvWrongAnswer.setText(String.valueOf(Common.wrong_count_answer));
+        if (currentQuestion.getType() == Common.ANSWER_TYPE.NO_ANSWER) {
+            questionFragment.showCorrectAnswer();
+            questionFragment.disableAnswer();
+        }
+
+        Intent intent = new Intent(this, ResultActivity.class);
+        Common.timer = Common.TOTAL_TIME - time_play;
+        Common.no_answer = Common.questionList.size() - (Common.right_answer + Common.wrong_count_answer);
+        Common.data_question = new StringBuilder(new Gson().toJson(Common.listAnswerSheet));
+
+        startActivityForResult(intent, 100);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -231,5 +357,15 @@ public class QuestionActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem menuItem = menu.findItem(R.id.menu_wrong_answer);
+        ConstraintLayout constraintLayout = (ConstraintLayout) menuItem.getActionView();
+        tvWrongAnswer = constraintLayout.findViewById(R.id.tv_wrong_answer);
+        tvWrongAnswer.setText("0");
+        return true;
+
     }
 }

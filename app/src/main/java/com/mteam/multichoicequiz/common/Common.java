@@ -12,12 +12,19 @@ import java.util.TreeSet;
 public class Common {
 
     public static final int TOTAL_TIME = 20 * 60 * 1000;//20min
+    public static final String KET_BACK_RESULT = "BACK";
+    public static final String KEY_BACK_RESULT = "KEY";
     public static Category categorySelected=new Category();
     public static List<Question> questionList=new ArrayList<>();
     public static List<CurrentQuestion> listAnswerSheet=new ArrayList<>();
     public static int right_answer=0;
+    public static int wrong_count_answer=0;
+    public static int timer=0;
     public static List<QuestionFragment> listFragment=new ArrayList<>();
     public static TreeSet<String> selected_values=new TreeSet<>();
+    public static int no_answer=0;
+
+    public static StringBuilder data_question=new StringBuilder();
 
 
     public  enum ANSWER_TYPE{

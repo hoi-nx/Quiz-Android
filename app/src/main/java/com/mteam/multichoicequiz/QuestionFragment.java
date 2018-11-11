@@ -1,10 +1,13 @@
 package com.mteam.multichoicequiz;
 
 
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +17,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.mteam.multichoicequiz.common.Common;
 import com.mteam.multichoicequiz.model.CurrentQuestion;
@@ -132,11 +136,57 @@ public class QuestionFragment extends Fragment implements IQuestion{
 
     @Override
     public CurrentQuestion getSelectAnswer() {
-        return null;
+        CurrentQuestion currentQuestion=new CurrentQuestion(questionIndex,Common.ANSWER_TYPE.NO_ANSWER);
+        StringBuilder stringBuilder=new StringBuilder();
+        if(Common.selected_values.size()>0){
+            Object object[]=Common.selected_values.toArray();
+            for(int i=0;i<object.length;i++){
+                if(i<object.length-1){
+                    stringBuilder.append(new StringBuffer(((String)object[i]).substring(0,1)).append(","));
+                }else {
+                    stringBuilder.append(new StringBuffer(((String)object[i]).substring(0,1)));
+                }
+            }
+        }else if(Common.selected_values.size()==1){
+            Object object[]=Common.selected_values.toArray();
+            stringBuilder.append(new StringBuffer(((String)object[0]).substring(0,1)));
+        }
+        if(question!=null){
+            if(!TextUtils.isEmpty(stringBuilder)){
+                if(stringBuilder.toString().equals(question.getCorrectAnswer())){
+                    currentQuestion.setType(Common.ANSWER_TYPE.CORRECT_ANSWER);
+                }else {
+                    currentQuestion.setType(Common.ANSWER_TYPE.WRONG_ANSWER);
+                }
+            }else {
+                currentQuestion.setType(Common.ANSWER_TYPE.NO_ANSWER);
+            }
+        }else {
+            Toast.makeText(getActivity(),"Can not get question",Toast.LENGTH_LONG).show();
+            currentQuestion.setType(Common.ANSWER_TYPE.NO_ANSWER);
+        }
+        Common.selected_values.clear();
+        return currentQuestion;
     }
 
     @Override
     public void showCorrectAnswer() {
+        String [] correct=question.getCorrectAnswer().split(",");
+        for(String c:correct){
+            if(c.equals("A")){
+                checkBoxA.setTypeface(null,Typeface.BOLD);
+                checkBoxA.setTextColor(Color.RED);
+            }else if(c.equals("B")){
+                checkBoxB.setTypeface(null,Typeface.BOLD);
+                checkBoxB.setTextColor(Color.RED);
+            }else if(c.equals("C")){
+                checkBoxC.setTypeface(null,Typeface.BOLD);
+                checkBoxC.setTextColor(Color.RED);
+            }else if(c.equals("D")){
+                checkBoxD.setTypeface(null,Typeface.BOLD);
+                checkBoxD.setTextColor(Color.RED);
+            }
+        }
 
     }
 
@@ -147,5 +197,31 @@ public class QuestionFragment extends Fragment implements IQuestion{
         checkBoxC.setEnabled(false);
         checkBoxD.setEnabled(false);
 
+    }
+
+    @Override
+    public void resetQuestion() {
+        checkBoxA.setEnabled(true);
+        checkBoxB.setEnabled(true);
+        checkBoxC.setEnabled(true);
+        checkBoxD.setEnabled(true);
+
+
+        checkBoxA.setEnabled(false);
+        checkBoxB.setEnabled(false);
+        checkBoxC.setEnabled(false);
+        checkBoxD.setEnabled(false);
+
+        checkBoxA.setTypeface(null,Typeface.NORMAL);
+        checkBoxA.setTextColor(Color.BLACK);
+
+        checkBoxB.setTypeface(null,Typeface.NORMAL);
+        checkBoxB.setTextColor(Color.BLACK);
+
+        checkBoxC.setTypeface(null,Typeface.NORMAL);
+        checkBoxC.setTextColor(Color.BLACK);
+
+        checkBoxD.setTypeface(null,Typeface.NORMAL);
+        checkBoxD.setTextColor(Color.BLACK);
     }
 }

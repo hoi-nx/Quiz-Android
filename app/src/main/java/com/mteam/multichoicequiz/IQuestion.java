@@ -6,5 +6,6 @@ public interface IQuestion {
     CurrentQuestion getSelectAnswer();
     void showCorrectAnswer();
     void disableAnswer();
+    void resetQuestion();
 
 }
